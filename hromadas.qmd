@@ -1,0 +1,62 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="3.34.3-Prizren">
+  <identifier>ukr_admbnda_adm3_sspe_20240416</identifier>
+  <parentidentifier></parentidentifier>
+  <language>RUS</language>
+  <type>dataset</type>
+  <title>UKRAINE: Admin Level 3 Boundaries</title>
+  <abstract>Administrative level 3 contains 1,769 feature(s). The normal administrative level 3 feature type is 'hromada (community)'.
+
+Administrative Level 3 Boundaries of Ukraine</abstract>
+  <keywords vocabulary="Search keys">
+    <keyword>ADMINISTRATIVE DIVISIONS</keyword>
+    <keyword>COMMON OPERATIONAL DATASET - COD</keyword>
+  </keywords>
+  <contact>
+    <name>Joseph Childs</name>
+    <organization>ITOS - University of Georgia</organization>
+    <position>Staff</position>
+    <voice></voice>
+    <fax></fax>
+    <email></email>
+    <role></role>
+  </contact>
+  <links/>
+  <history>Layer was sent to ITOS in an email from UNOCHA. It was then analyzed by ITOS for errors. Those errors were corrected and then the layer was sent back to UNOCHA as a feature class within a file geodatabase. The following was found and fixed by ITOS: 1. Created and populated admin parent name and p-code fields. Attribution comes from p-code's parent p-code portions. 2. Fixed 32 gap errors and 41 overlap errors. 3. Fixed a multipart sliver error in unit "Hleiuvatska". 4. Fixed small nesting errors between Admin0-3. Users should be aware that: - 6 Admin3 names are not unique within their Admin2: Chornomorska, Kalininska, Leninska, Mykolaivska, Oktiabrska, Pokrovska - 45 Admin3 names do not have a 1 to 1 relationship between languages. - Admin3 "Bakhchysaraiskyi" and "Sevastopol" do not nest with the Admin2 layer. </history>
+  <dates>
+    <date value="2024-03-18T00:00:00" type="Created"/>
+    <date value="2024-04-16T00:00:00" type="Published"/>
+  </dates>
+  <fees></fees>
+  <constraints type="Limitations of use">See the COD/FOD Registry Terms of Use. This does not replace any terms of use information provided with the dataset.
+</constraints>
+  <encoding></encoding>
+  <crs>
+    <spatialrefsys nativeFormat="Wkt">
+      <wkt>GEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble",MEMBER["World Geodetic System 1984 (Transit)"],MEMBER["World Geodetic System 1984 (G730)"],MEMBER["World Geodetic System 1984 (G873)"],MEMBER["World Geodetic System 1984 (G1150)"],MEMBER["World Geodetic System 1984 (G1674)"],MEMBER["World Geodetic System 1984 (G1762)"],MEMBER["World Geodetic System 1984 (G2139)"],ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]],ENSEMBLEACCURACY[2.0]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["Horizontal component of 3D system."],AREA["World."],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+      <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+      <srsid>3452</srsid>
+      <srid>4326</srid>
+      <authid>EPSG:4326</authid>
+      <description>WGS 84</description>
+      <projectionacronym>longlat</projectionacronym>
+      <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+      <geographicflag>true</geographicflag>
+    </spatialrefsys>
+  </crs>
+  <extent>
+    <spatial miny="44.3864110000000025" maxz="0" maxx="40.2278829999999985" maxy="52.37929100000000204" minz="0" dimensions="2" minx="22.13691199999999881" crs="EPSG:4326"/>
+    <temporal>
+      <period>
+        <start>2024-04-15T21:00:00Z</start>
+        <end></end>
+      </period>
+    </temporal>
+    <temporal>
+      <period>
+        <start></start>
+        <end></end>
+      </period>
+    </temporal>
+  </extent>
+</qgis>
