@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<title>Громади, лінія фронту та окуповані території</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+html, body { margin:0; height:100%; }
+#app { display:flex; height:100%; width:100%; }
+#sidebar {
+    width: 280px;
+    max-width: 32%;
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 0 20px rgba(15,23,42,0.25);
+    padding: 10px 12px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    z-index: 1000;
+}
+#sidebar h1 { font-size: 16px; margin: 0 0 4px; }
+#sidebar .subtitle { font-size: 11px; color: #6b7280; margin: 0; }
+.field { display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
+.field label { font-size: 11px; color:#4b5563; font-weight:600; }
+
+.dropdown { position: relative; }
+.dropdown-display {
+    border-radius: 8px; border: 1px solid #d1d5db;
+    padding: 4px 8px; cursor: pointer;
+    display:flex; justify-content:space-between; align-items:center;
+    background:white;
+}
+.dropdown-display span.summary {
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 160px;
+}
+.dropdown-display span.caret { font-size: 10px; color:#6b7280; }
+.dropdown-panel {
+    position:absolute; top: 105%; left:0; right:0;
+    max-height: 220px; overflow-y:auto;
+    background:white; border-radius: 8px; border: 1px solid #d1d5db;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.25);
+    padding:4px 6px; z-index:1001; display:none;
+}
+.dropdown-panel.open { display:block; }
+
+#hromadaSearch {
+    border-radius: 8px; border:1px solid #d1d5db;
+    padding:3px 7px; font-size:12px;
+}
+#hromadaSearch:focus {
+    outline:none; border-color:#1d4ed8;
+    box-shadow:0 0 0 1px rgba(37,99,235,0.4);
+}
+
+#map { flex:1; position:relative; }
+.leaflet-tile { filter: grayscale(1) brightness(1.05); }
+
+#bottomFilter {
+    position:absolute; bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    z-index:1000;
+    background: rgba(255,255,255,0.98);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.3);
+    padding: 8px 12px;
+    font-family: system-ui; font-size: 12px;
+    display:flex; align-items:center; gap:8px;
+}
+
+#bottomFilter label { font-weight:600; }
+#distValue { font-weight:600; }
+
+.legend {
+    margin-top:6px; padding:6px 8px;
+    border-radius:8px; background:#f9fafb;
+    border:1px solid #e5e7eb;
+}
+.legend-title { font-size:11px; font-weight:600; margin-bottom:4px; color:#4b5563; }
+.legend-item { display:flex; align-items:center; gap:6px; font-size:11px; margin-bottom:2px; }
+.legend-swatch {
+    width:14px; height:14px; border-radius:3px;
+    border:1px solid rgba(15,23,42,0.3);
+}
+.legend-line { width:16px; height:3px; border-radius:2px; }
+.note { font-size: 11px; color:#6b7280; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="sidebar">
+    <h1>Фільтри громад</h1>
+    <p class="subtitle">
+      Обирайте області, райони та громади (кілька одночасно), а також фільтруйте за відстанню до лінії фронту.
+    </p>
+
+    <div class="field">
+      <label>Області</label>
+      <div class="dropdown" id="oblastDropdown">
+        <div class="dropdown-display" id="oblastDisplay">
+          <span class="summary" id="oblastSummary">Усі</span><span class="caret">▼</span>
+        </div>
+        <div class="dropdown-panel" id="oblastPanel"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Райони</label>
+      <div class="dropdown" id="districtDropdown">
+        <div class="dropdown-display" id="districtDisplay">
+          <span class="summary" id="districtSummary">Усі</span><span class="caret">▼</span>
+        </div>
+        <div class="dropdown-panel" id="districtPanel"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Громади</label>
+      <input type="text" id="hromadaSearch" placeholder="Пошук громади..." />
+      <div class="dropdown" id="hromadaDropdown">
+        <div class="dropdown-display" id="hromadaDisplay">
+          <span class="summary" id="hromadaSummary">Усі</span><span class="caret">▼</span>
+        </div>
+        <div class="dropdown-panel" id="hromadaPanel"></div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Умовні позначення</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#007fc5;"></div> <span>Громади</span></div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#003b70;"></div> <span>Громади на лінії фронту</span></div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#cc1717;"></div> <span>Окуповані території</span></div>
+      <div class="legend-item"><div class="legend-line" style="background:#cc1717;"></div> <span>Лінія фронту</span></div>
+    </div>
+
+    <p class="note">
+      Для громад, через які проходить лінія фронту, мінімальна відстань = 0 км.
+    </p>
+  </div>
+
+  <div id="map">
+    <div id="bottomFilter">
+      <label for="distSlider">Відстань ≤</label>
+      <input type="range" id="distSlider" min="0" step="5">
+      <span id="distValue"></span><span> км</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let hromadasData = null;
+let occupiedData = null;
+let frontlineData = null;
+
+let hromadaLayer = null;
+let hromadaFeatures = [];
+
+const mapCenter = [48.382850963301365, 31.182397573439317];
+const sliderMax = 430;
+
+const darkBlue = '#007fc5';
+const veryDarkBlue = '#003b70';
+const redFill = '#cc1717';
+const redLine = '#cc1717';
+
+const map = L.map('map', {
+    center: mapCenter,
+    zoom: 6,
+    minZoom: 4
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+function loadAllData() {
+    return Promise.all([
+        fetch("hromadas.geojson").then(r => r.json()),
+        fetch("occupied.geojson").then(r => r.json()).catch(()=>null),
+        fetch("frontline.geojson").then(r => r.json()).catch(()=>null)
+    ]).then(([hrom, occ, line]) => {
+        hromadasData = hrom;
+        occupiedData = occ;
+        frontlineData = line;
+
+        if (occupiedData) {
+            L.geoJSON(occupiedData, {
+                style: { color:"transparent", weight:0, fillColor:redFill, fillOpacity:0.4 }
+            }).addTo(map);
+        }
+
+        if (frontlineData) {
+            L.geoJSON(frontlineData, {
+                style: { color:redLine, weight:3, opacity:1 }
+            }).addTo(map);
+        }
+
+        createHromadaLayer();
+        initializeFilters();
+    });
+}
+
+function baseHromadaStyle(feature) {
+    const d = feature.properties.dist_min_km_frontline;
+    const isZero = (d === 0);
+    const color = isZero ? veryDarkBlue : darkBlue;
+
+    return {
+        color: color,
+        weight: 0.8,
+        fillColor: color,
+        fillOpacity: 0.35,
+        opacity: 1
+    };
+}
+
+function onEachHromada(feature, layer) {
+    const p = feature.properties || {};
+    const d = p.dist_min_km_frontline;
+    const dText = (d == null || !isFinite(d)) ? 'Н/д' : d.toFixed(1)+' км';
+
+    const popup =
+        `<strong>${p.ADM3_UA}</strong><br>
+        Район: ${p.ADM2_UA}<br>
+        Область: ${p.ADM1_UA}<br>
+        Відстань: <strong>${dText}</strong>`;
+
+    layer.bindPopup(popup);
+
+    hromadaFeatures.push({feature, layer});
+}
+
+function createHromadaLayer() {
+    if (hromadaLayer) map.removeLayer(hromadaLayer);
+
+    hromadaFeatures = [];
+    hromadaLayer = L.geoJSON(hromadasData, {
+        style: baseHromadaStyle,
+        onEachFeature: onEachHromada
+    }).addTo(map);
+}
+
+/* ---- ФІЛЬТРИ ---- */
+
+let selectedOblasts = new Set();
+let selectedDistricts = new Set();
+let selectedHromadas = new Set();
+
+let allHromadasFlat = [];
+
+function initializeFilters() {
+    allHromadasFlat = hromadasData.features.map(f => {
+        const p = f.properties;
+        return {
+            adm1: p.ADM1_UA,
+            adm2: p.ADM2_UA,
+            adm3: p.ADM3_UA,
+            dist: p.dist_min_km_frontline
+        };
+    });
+
+    buildOblastPanel();
+    buildDistrictPanel();
+    buildHromadaPanel();
+    applyFilters();
+}
+
+function uniqueSorted(arr) {
+    return Array.from(new Set(arr.filter(Boolean))).sort();
+}
+
+function updateSummary(el, set, labelAll="Усі") {
+    if (set.size === 0) el.textContent = labelAll;
+    else if (set.size === 1) el.textContent = [...set][0];
+    else el.textContent = "Обрано " + set.size;
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown'))
+        document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+});
+
+document.getElementById('oblastDisplay').onclick = () =>
+    document.getElementById('oblastPanel').classList.toggle('open');
+
+document.getElementById('districtDisplay').onclick = () =>
+    document.getElementById('districtPanel').classList.toggle('open');
+
+document.getElementById('hromadaDisplay').onclick = () =>
+    document.getElementById('hromadaPanel').classList.toggle('open');
+
+const oblastPanel = document.getElementById('oblastPanel');
+const districtPanel = document.getElementById('districtPanel');
+const hromadaPanel = document.getElementById('hromadaPanel');
+
+const oblastSummary = document.getElementById('oblastSummary');
+const districtSummary = document.getElementById('districtSummary');
+const hromadaSummary = document.getElementById('hromadaSummary');
+const hromadaSearch = document.getElementById('hromadaSearch');
+
+function buildOblastPanel() {
+    const items = uniqueSorted(allHromadasFlat.map(x => x.adm1));
+    selectedOblasts = new Set([...selectedOblasts].filter(x => items.includes(x)));
+    oblastPanel.innerHTML = '';
+
+    items.forEach(name => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+
+        cb.type = 'checkbox';
+        cb.checked = selectedOblasts.has(name);
+        cb.onchange = () => {
+            cb.checked ? selectedOblasts.add(name) : selectedOblasts.delete(name);
+            updateSummary(oblastSummary, selectedOblasts);
+            buildDistrictPanel();
+            buildHromadaPanel();
+            applyFilters();
+        };
+
+        label.appendChild(cb);
+        label.append(name);
+        oblastPanel.appendChild(label);
+    });
+
+    updateSummary(oblastSummary, selectedOblasts);
+}
+
+function buildDistrictPanel() {
+    const items = uniqueSorted(
+        allHromadasFlat
+            .filter(x => selectedOblasts.size === 0 || selectedOblasts.has(x.adm1))
+            .map(x => x.adm2)
+    );
+
+    selectedDistricts = new Set([...selectedDistricts].filter(x => items.includes(x)));
+    districtPanel.innerHTML = '';
+
+    items.forEach(name => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+
+        cb.type = 'checkbox';
+        cb.checked = selectedDistricts.has(name);
+        cb.onchange = () => {
+            cb.checked ? selectedDistricts.add(name) : selectedDistricts.delete(name);
+            updateSummary(districtSummary, selectedDistricts);
+            buildHromadaPanel();
+            applyFilters();
+        };
+
+        label.appendChild(cb);
+        label.append(name);
+        districtPanel.appendChild(label);
+    });
+
+    updateSummary(districtSummary, selectedDistricts);
+}
+
+function buildHromadaPanel() {
+    const q = hromadaSearch.value.trim().toLowerCase();
+    const items = uniqueSorted(
+        allHromadasFlat
+            .filter(x =>
+                (selectedOblasts.size === 0 || selectedOblasts.has(x.adm1)) &&
+                (selectedDistricts.size === 0 || selectedDistricts.has(x.adm2))
+            )
+            .map(x => x.adm3)
+    );
+
+    selectedHromadas = new Set([...selectedHromadas].filter(x => items.includes(x)));
+    hromadaPanel.innerHTML = '';
+
+    items
+        .filter(name => name.toLowerCase().includes(q))
+        .forEach(name => {
+            const label = document.createElement('label');
+            const cb = document.createElement('input');
+
+            cb.type = 'checkbox';
+            cb.checked = selectedHromadas.has(name);
+            cb.onchange = () => {
+                cb.checked ? selectedHromadas.add(name) : selectedHromadas.delete(name);
+                updateSummary(hromadaSummary, selectedHromadas);
+                applyFilters();
+            };
+
+            label.appendChild(cb);
+            label.append(name);
+            hromadaPanel.appendChild(label);
+        });
+
+    updateSummary(hromadaSummary, selectedHromadas);
+}
+
+hromadaSearch.oninput = () => buildHromadaPanel();
+
+const distSlider = document.getElementById('distSlider');
+const distValue = document.getElementById('distValue');
+distSlider.max = sliderMax;
+distSlider.value = sliderMax;
+distValue.textContent = sliderMax;
+
+distSlider.oninput = e => {
+    distValue.textContent = e.target.value;
+    applyFilters();
+};
+
+function applyFilters() {
+    const maxDist = parseFloat(distSlider.value);
+
+    hromadaFeatures.forEach(({feature, layer}) => {
+        const p = feature.properties;
+        let visible = true;
+
+        if (selectedOblasts.size > 0 && !selectedOblasts.has(p.ADM1_UA)) visible = false;
+        if (selectedDistricts.size > 0 && !selectedDistricts.has(p.ADM2_UA)) visible = false;
+        if (selectedHromadas.size > 0 && !selectedHromadas.has(p.ADM3_UA)) visible = false;
+        if (p.dist_min_km_frontline == null || p.dist_min_km_frontline > maxDist) visible = false;
+
+        if (visible) {
+            layer.setStyle({ opacity:1, fillOpacity:0.35 });
+        } else {
+            layer.setStyle({ opacity:0, fillOpacity:0 });
+        }
+    });
+}
+
+loadAllData();
+</script>
+
+</body>
+</html>
